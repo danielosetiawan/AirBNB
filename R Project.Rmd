@@ -12,22 +12,36 @@ library(tidyr)
 library(ggplot2)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# dataset
+https://www.kaggle.com/datasets/tamle507/airbnb-listings-usa
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+df = read.csv('./airbnb_listings.csv')
 ```
 
-## Including Plots
+```{r}
+# lets first remove the null values
+df = na.omit(df)
+```
+
+```{r}
+summary(df)
+unique(df$room_type)
+unique(df$minimum_nights)
+unique(df$state)
+```
+
 
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+df %>%
+  group_by(state, room_type) %>%
+  summarise(price = mean(price)) %>%
+  ggplot(aes(price, state)) +
+  geom_point(aes(color = room_type)) +
+  facet_grid(. ~ room_type)
+  
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
