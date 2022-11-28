@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(readr)
+library(lubridate)
 library(tidyverse)
 ```
 
@@ -23,7 +23,7 @@ filename = list.files(pattern = '*.csv', full.names = TRUE)
 
 
 ```{r}
-# add city and state columns to all dataframes
+## add city and state columns to all dataframes
 # cities = gsub('\\./|\\.csv', '', filename)
 # names(cities) = c('NC', 'TX', 'MA', 'FL', 'MA', 'IL', 'NV', 'OH', 'TX', 
 #                 'CO', 'TX', 'HI', 'NJ', 'CA', 'CA', 'TN', 'AK', 'NJ', 
@@ -61,79 +61,62 @@ df = df_raw %>%
 df = df %>%
   drop_na(c(description, host_since, bedrooms, beds, bathrooms_text))
 
-
-df %>%
-  mutate(price = gsub(',|\\$', '', price),
-         host_response_rate = gsub('%|N/A', '', host_response_rate),
-         host_acceptance_rate = gsub('%|N/A', '', host_acceptance_rate),
-         bathrooms = ifelse(grepl('half-bath', bathrooms_text), 
-                            0.5, gsub('[^0-9.]', '',bathrooms_text))) %>%
-  mutate_at(c('review_scores_rating', 'review_scores_accuracy', 
-              'review_scores_cleanliness', 'review_scores_checkin', 
-              'review_scores_communication', 'review_scores_location',
-              'review_scores_value', 'reviews_per_month', 'accommodates',
-              'bedrooms', 'beds', 'minimum_nights', 'maximum_nights', 
-              'minimum_nights_avg_ntm', 'maximum_nights_avg_ntm', 'price',
-              'number_of_reviews', 'host_total_listings_count', 'bathrooms', 
-              'host_response_rate', 'host_acceptance_rate'), as.numeric)
-
-df %>%
-  mutate_at(c('price', 'host_acceptance_rate', 'host_response_rate'),
-            gsub(',|\\$|%|N/A', '', .))
-  
-
-```
-
-
-```{r}
+#making df readable and easy to analyze
 df = df %>%
-  mutate(description = str_count(description, '\\s+') + 1, #num_words
-         host_about = str_count(host_about, '\\s+') + 1, #num_words
-         name_len = str_length(name),
-         host_since = as.Date(host_since, '%m/%d/%y'),
-         # host_response_rate = as.numeric(gsub('%|N/A', '', host_response_rate)),
-         # host_acceptance_rate = as.numeric(gsub('%|N/A', '', host_acceptance_rate)),
-         host_response_time = factor(host_response_time),
+  mutate(across(c(price, host_acceptance_rate, host_response_rate, 
+                  host_response_time), ~ gsub(',|\\$|%|N/A', '', .)),
+         bathrooms = ifelse(grepl('half-bath', bathrooms_text), 
+                            0.5, gsub('[^0-9.]', '',bathrooms_text)),
+         across(c(review_scores_rating, review_scores_accuracy, 
+              review_scores_cleanliness, review_scores_checkin, 
+              review_scores_communication, review_scores_location,
+              review_scores_value, reviews_per_month, accommodates,
+              bedrooms, beds, minimum_nights, maximum_nights, 
+              minimum_nights_avg_ntm, maximum_nights_avg_ntm, price,
+              number_of_reviews, host_total_listings_count, bathrooms,
+              price, host_acceptance_rate, host_response_rate,
+              availability_365), as.numeric),
+         across(c(description, host_about), ~ str_count(., '\\s+') + 1),
+         across(c(host_since, last_review), ~ as.Date(., '%m/%d/%y')),
+         title_len = str_length(name),
+         num_hosts = str_count(host_name, 'and|And|\\&') + 1,
+         amenities_count = str_count(amenities, '"') / 2,
          num_verification = str_count(host_verifications, "'") / 2,
-         # bathrooms = as.numeric(ifelse(grepl('half-bath', bathrooms_text), 
-         #             0.5, gsub('[^0-9.]', '',bathrooms_text))),
-         bathrooms_text = factor(ifelse(grepl('hared', bathrooms_text), 
-                            'shared', 'private')),
-         amenities_count = str_count(amenities, '"') / 2, 
-         last_review = as.Date(last_review, '%m/%d/%y'),
-         num_hosts = str_count(host_name, 'and|And|\\&') + 1)
-         
-df
+         bathrooms_text = ifelse(grepl('hared', bathrooms_text), 
+                                 'shared', 'private'),
+         across(c(host_response_time, bathrooms_text, property_type,
+                  room_type), factor),
+         across(c(instant_bookable, host_has_profile_pic, 
+                  host_identity_verified, host_is_superhost), as.logical))
+
+# removing additional null values
+df = df %>%
+  filter(!price == 0)
+
+# and outliers
+var_ = df$price
+
+quartiles = quantile(var_, probs=c(0.25, 0.75))
+iqr = IQR(var_)
+
+lower = quartiles[1] - 1.5 * iqr
+upper = quartiles[2] + 1.5 * iqr
+
+df = subset(df, var_ > lower & var_ < upper)
 ```
+
 ```{r}
 summary(df)
 ```
 
 
-```{r}
 
-
-x = df$number_of_reviews
-
-quartiles = quantile(x, probs=c(0.25, 0.75))
-iqr = IQR(x)
-
-lower = quartiles[1] - 1.5 * iqr
-upper = quartiles[2] + 1.5 * iqr
-
-df3 = subset(df, x > lower & x < upper)
-
-```
-
-```{r}
-df
-```
-```{r}
-# 
-```
 
 ```{r}
 df %>%
+  # group_by(state) %>%
+  # mutate(price2 = mean(price)) %>%
+  # ungroup(state) %>%
   ggplot(aes(price, reorder(state, price))) +
   geom_boxplot(aes(color = state), show.legend = FALSE) +
   labs(title = 'Average Cost by State',
@@ -158,23 +141,94 @@ df %>%
 
 ```{r}
 df %>%
-  ggplot(aes(number_of_reviews, price)) +
-  geom_point(aes(color = room_type)) +
-  facet_grid(. ~ room_type, scales = 'free') +
+  filter(number_of_reviews < 2000) %>%
+  ggplot(aes(price, number_of_reviews)) +
+  geom_col(aes(color = room_type)) +
+  facet_wrap(. ~ room_type, scales = 'free') +
   labs(title = 'Room Cost vs. Reviews',
        color = 'Room Type',
-       x = 'Number of Reviews',
-       y = 'Price per night (USD)')
+       x = 'Price per night (USD)',
+       y = 'Number of Reviews')
   ggsave('Room Cost by Reviews.png', width = 10, height = 6)
 ```
 
 ```{r}
-df[df$number_of_reviews > 1000, ]
+lubridate::year(df$host_since)
 ```
+
 
 ```{r}
 df %>%
-  ggplot(aes(minimum_nights, price)) +
-  geom_point(aes(color = room_type)) +
-  facet_grid(. ~ room_type)
+  group_by(city) %>%
+  summarise(count = sum(number_of_reviews)) %>%
+  arrange(desc(count)) %>%
+  ggplot(aes(count, reorder(city, count))) +
+  geom_col(aes(fill = 'FC642D'), show.legend = FALSE) + 
+  theme_few() +
+  labs(title = 'Review Count by City',
+       x = 'Number of Reviews',
+       y = 'City') +
+  scale_x_continuous(breaks = c(0, 5e5, 1e6), labels = c('0', '500K', '1M'))
+  ggsave('Reviews by City - Barplot.png', width = 10, height = 6)
 ```
+```{r}
+df %>%
+  group_by(city) %>%
+  summarise(count = sum(number_of_reviews)) %>%
+  arrange(desc(count)) %>%
+  ggplot(aes(count, reorder(city, count))) +
+  geom_col(aes(fill = 'FC642D'), show.legend = FALSE) + 
+  theme_few() +
+  labs(title = 'Review Count by City',
+       x = 'Number of Reviews',
+       y = 'City')
+  # scale_x_continuous(breaks = c(0, 5e5, 1e6), labels = c('0', '500K', '1M'))
+  ggsave('Reviews by City - Barplot.png', width = 10, height = 6)
+```
+```{r}
+days(df$last_review)
+df
+```
+
+```{r}
+library(tidyr)
+tidyr::unnest(df, cols = c('amenities'), names_sep = ',') %>%
+  
+```
+```{r}
+df %>%
+  mutate(listing_url = gsub('\\]|\\[', '', amenities)) %>%
+  tidyr::unnest(df, cols = c('amenities'), names_sep = ',')
+```
+
+
+
+
+
+```{r}
+df %>%
+  filter(grepl('ishwasher', amenities))
+```
+
+
+```{r}
+df %>%
+  na.omit(host_is_superhost) %>%
+  ggplot(aes(year(host_since), number_of_reviews)) +
+  geom_point(aes(color = host_is_superhost)) +
+  facet_grid(. ~ host_is_superhost)
+  
+```
+```{r}
+df %>%
+  group_by(property_type) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(10) %>%
+
+
+  ggplot(aes(count, reorder(property_type, count))) +
+  geom_col()
+
+```
+
