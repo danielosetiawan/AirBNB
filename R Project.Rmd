@@ -196,9 +196,44 @@ tidyr::unnest(df, cols = c('amenities'), names_sep = ',') %>%
   
 ```
 ```{r}
-df %>%
-  mutate(listing_url = gsub('\\]|\\[', '', amenities)) %>%
-  tidyr::unnest(df, cols = c('amenities'), names_sep = ',')
+df2 = df %>%
+  mutate(amenities = tolower(gsub('\\]|\\[|"', '', amenities))) %>%
+  tidyr::separate_rows(amenities, sep = ', ') %>%
+  mutate(amenities = case_when(grepl('coffee', amenities) ~ 'coffee', 
+                               grepl('long term', amenities) ~ 'long term',
+                               grepl('parking|garage|carport', amenities) ~ 'parking',
+                               grepl('shampoo|condition|essential|soap', amenities) ~ 'toiletries',
+                               grepl('tv|netflix|hulu|streaming|cable|roku|hbo|prime video|dvd', amenities) ~ 'tv',
+                               grepl('washer|dryer|laundry', amenities) ~ 'laundry',
+                               grepl('patio|balcony', amenities) ~ 'outdoor space',
+                               grepl('hot tub|pool|jacuzzi|sauna', amenities) ~ 'outdoor tub',
+                               grepl('staff', amenities) ~ 'concierge',
+                               grepl('ev', amenities) ~ 'ev charging',
+                               grepl('gym', amenities) ~ 'gym',
+                               grepl('wifi', amenities) ~ 'wifi',
+                               grepl('ac|a/c', amenities) ~ 'ac',
+                               grepl('heat', amenities) ~ 'heater',
+                               grepl('sound|music|stereo|bluetooth|aux', amenities) ~ 'music',
+                               grepl('game|ping pong|billiard', amenities) ~ 'gameroom',
+                               grepl('fridge|refrigerator|freezer|toaster', amenities) ~ 'kitchen',
+                               grepl('oven|dishes|cooking|microwave|stove', amenities) ~ 'kitchen',
+                               grepl('camera', amenities) ~ 'security camera',
+                               grepl('alarm|fire|smoke|extinguisher|first aid', amenities) ~ 'safety',
+                               grepl('pillows|blankets|linens', amenities) ~ 'linens',
+                               TRUE ~ amenities)) %>%
+  distinct()
+
+df2 %>%
+  group_by(amenities) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(25) %>%
+  ggplot(aes(count, reorder(amenities, count))) + 
+    geom_col(aes(fill = 'FC642D'), show.legend = FALSE) +
+    theme_few() +
+    labs(title = 'Amenities Offered by Hosts',
+       x = 'Count',
+       y = 'Amenities')
 ```
 
 
