@@ -10,38 +10,171 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(readr)
+library(tidyverse)
 ```
 
-
-# dataset
-https://www.kaggle.com/datasets/tamle507/airbnb-listings-usa
+*Data* <http://insideairbnb.com/get-the-data> column name dictionary: <https://docs.google.com/spreadsheets/d/1b_dvmyhb_kAJhUmv81rAxl4KcXn0Pymz>
 
 ```{r}
-df = read.csv('./airbnb_listings.csv')
+# detect all files
+filename = list.files(pattern = '*.csv', full.names = TRUE)
+```
+
+
+```{r}
+# add city and state columns to all dataframes
+# cities = gsub('\\./|\\.csv', '', filename)
+# names(cities) = c('NC', 'TX', 'MA', 'FL', 'MA', 'IL', 'NV', 'OH', 'TX', 
+#                 'CO', 'TX', 'HI', 'NJ', 'CA', 'CA', 'TN', 'AK', 'NJ', 
+#                 'NY', 'CA', 'CA', 'OR', 'RI', 'MA', 'CA', 'CA', 'CA', 
+#                 'CA', 'CA', 'WA', 'MN', 'DC')
+# 
+# for (file in filename) {
+#   city = gsub('\\./|2?\\.csv', '', file)
+#   state = names(cities)[cities == city]
+#   df = read_csv(file, show_col_types = FALSE)
+#   df %>%
+#     mutate(city = city,
+#            state = state) %>%
+#     write_csv(file)
+# }
 ```
 
 ```{r}
-# lets first remove the null values
-df = na.omit(df)
+# combine all cities into one dataframe
+# due to null values, its easier to convert all columns as type c
+df_raw = filename %>%
+  lapply(read_csv, col_types = cols(.default = 'c')) %>%
+  bind_rows
 ```
 
+
+*Cleaning up the data*
+
+```{r}
+# removing columns we don't need
+df = df_raw %>%
+  select(-c(2:3, 9, 15:16, 23, 27, 35:38, 41:45, 47, 49:51, 61:64, 68:77))
+
+#removing na from selected columns
+df = df %>%
+  drop_na(c(description, host_since, bedrooms, beds, bathrooms_text))
+
+
+df %>%
+  mutate(price = gsub(',|\\$', '', price),
+         host_response_rate = gsub('%|N/A', '', host_response_rate),
+         host_acceptance_rate = gsub('%|N/A', '', host_acceptance_rate),
+         bathrooms = ifelse(grepl('half-bath', bathrooms_text), 
+                            0.5, gsub('[^0-9.]', '',bathrooms_text))) %>%
+  mutate_at(c('review_scores_rating', 'review_scores_accuracy', 
+              'review_scores_cleanliness', 'review_scores_checkin', 
+              'review_scores_communication', 'review_scores_location',
+              'review_scores_value', 'reviews_per_month', 'accommodates',
+              'bedrooms', 'beds', 'minimum_nights', 'maximum_nights', 
+              'minimum_nights_avg_ntm', 'maximum_nights_avg_ntm', 'price',
+              'number_of_reviews', 'host_total_listings_count', 'bathrooms', 
+              'host_response_rate', 'host_acceptance_rate'), as.numeric)
+
+df %>%
+  mutate_at(c('price', 'host_acceptance_rate', 'host_response_rate'),
+            gsub(',|\\$|%|N/A', '', .))
+  
+
+```
+
+
+```{r}
+df = df %>%
+  mutate(description = str_count(description, '\\s+') + 1, #num_words
+         host_about = str_count(host_about, '\\s+') + 1, #num_words
+         name_len = str_length(name),
+         host_since = as.Date(host_since, '%m/%d/%y'),
+         # host_response_rate = as.numeric(gsub('%|N/A', '', host_response_rate)),
+         # host_acceptance_rate = as.numeric(gsub('%|N/A', '', host_acceptance_rate)),
+         host_response_time = factor(host_response_time),
+         num_verification = str_count(host_verifications, "'") / 2,
+         # bathrooms = as.numeric(ifelse(grepl('half-bath', bathrooms_text), 
+         #             0.5, gsub('[^0-9.]', '',bathrooms_text))),
+         bathrooms_text = factor(ifelse(grepl('hared', bathrooms_text), 
+                            'shared', 'private')),
+         amenities_count = str_count(amenities, '"') / 2, 
+         last_review = as.Date(last_review, '%m/%d/%y'),
+         num_hosts = str_count(host_name, 'and|And|\\&') + 1)
+         
+df
+```
 ```{r}
 summary(df)
-unique(df$room_type)
-unique(df$minimum_nights)
-unique(df$state)
 ```
 
 
-You can also embed plots, for example:
+```{r}
+
+
+x = df$number_of_reviews
+
+quartiles = quantile(x, probs=c(0.25, 0.75))
+iqr = IQR(x)
+
+lower = quartiles[1] - 1.5 * iqr
+upper = quartiles[2] + 1.5 * iqr
+
+df3 = subset(df, x > lower & x < upper)
+
+```
+
+```{r}
+df
+```
+```{r}
+# 
+```
+
+```{r}
+df %>%
+  ggplot(aes(price, reorder(state, price))) +
+  geom_boxplot(aes(color = state), show.legend = FALSE) +
+  labs(title = 'Average Cost by State',
+       x = 'Price per night (USD)',
+       y = 'State', 
+       color = FALSE)
+  ggsave('AirBNB Cost by State - Boxplot.png', width = 10, height = 6)
+```
 
 ```{r pressure, echo=FALSE}
 df %>%
-  group_by(state, room_type) %>%
+  group_by(state) %>%
   summarise(price = mean(price)) %>%
-  ggplot(aes(price, state)) +
-  geom_point(aes(color = room_type)) +
-  facet_grid(. ~ room_type)
-  
+  ggplot(aes(price, reorder(state, price))) +
+  geom_col(aes(color = state), show.legend = FALSE) +
+  # facet_grid(. ~ room_type, scales = 'free_x') +
+  labs(title = 'Average Cost by State',
+       x = 'Price per night (USD)',
+       y = 'State')
+  ggsave('AirBNB Cost by State - Barplot.png', width = 10, height = 6)
 ```
 
+```{r}
+df %>%
+  ggplot(aes(number_of_reviews, price)) +
+  geom_point(aes(color = room_type)) +
+  facet_grid(. ~ room_type, scales = 'free') +
+  labs(title = 'Room Cost vs. Reviews',
+       color = 'Room Type',
+       x = 'Number of Reviews',
+       y = 'Price per night (USD)')
+  ggsave('Room Cost by Reviews.png', width = 10, height = 6)
+```
+
+```{r}
+df[df$number_of_reviews > 1000, ]
+```
+
+```{r}
+df %>%
+  ggplot(aes(minimum_nights, price)) +
+  geom_point(aes(color = room_type)) +
+  facet_grid(. ~ room_type)
+```
