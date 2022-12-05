@@ -19,26 +19,25 @@ library(tidyverse)
 
 ```{r}
 # detect all files
-listings = list.files(path = './listings', pattern = '*.csv', full.names = TRUE)
-reviews = list.files(path = './reviews', pattern = '*.csv', full.names = TRUE)
+files.listings = list.files(path = './listings', pattern = '*.csv', full.names = TRUE)
+files.reviews = list.files(path = './reviews', pattern = '*.csv', full.names = TRUE)
 ```
 
-
 ```{r}
-## add city and state columns to all dataframes
-# cities = gsub('\\./|\\.csv', '', listings)
-# names(cities) = c('NC', 'TX', 'MA', 'FL', 'MA', 'IL', 'NV', 'OH', 'TX', 
-#                 'CO', 'TX', 'HI', 'NJ', 'CA', 'CA', 'TN', 'AK', 'NJ', 
-#                 'NY', 'CA', 'CA', 'OR', 'RI', 'MA', 'CA', 'CA', 'CA', 
+# add city and state columns to all dataframes
+# cities = gsub('\\./|\\.csv|listings|/', '', files.listings)
+# names(cities) = c('NC', 'TX', 'MA', 'FL', 'MA', 'IL', 'NV', 'OH', 'TX',
+#                 'CO', 'TX', 'HI', 'NJ', 'CA', 'CA', 'TN', 'AK', 'NJ',
+#                 'NY', 'CA', 'CA', 'OR', 'RI', 'MA', 'CA', 'CA', 'CA',
 #                 'CA', 'CA', 'WA', 'MN', 'DC')
 # 
-# for (file in listings) {
-#   city = gsub('\\./|2?\\.csv', '', file)
-#   state = names(cities)[cities == city]
+# for (file in files.listings) {
+#   city_ = gsub('\\./|\\.csv|listings|/|2', '', file)
+#   state_ = unique(names(cities)[cities == city_])
 #   df = read_csv(file, show_col_types = FALSE)
 #   df %>%
-#     mutate(city = city,
-#            state = state) %>%
+#     mutate(city = city_,
+#            state = state_) %>%
 #     write_csv(file)
 # }
 ```
@@ -46,19 +45,21 @@ reviews = list.files(path = './reviews', pattern = '*.csv', full.names = TRUE)
 ```{r}
 # combine all cities into one dataframe
 # due to null values, its easier to convert all columns as type c
-raw_listings.df = listings %>%
+raw_listings.df = files.listings %>%
   lapply(read_csv, col_types = cols(.default = 'c')) %>%
   bind_rows
 
 # lets also combine all the different reviews
-raw_reviews.df = reviews %>%
+raw_reviews.df = files.reviews %>%
   lapply(read_csv, col_types = cols(.default = 'c')) %>%
   bind_rows
 
 raw_listings.df
 raw_reviews.df
 ```
-
+```{r}
+raw_listings.df
+```
 
 *Cleaning up the data*
 
@@ -66,7 +67,7 @@ raw_reviews.df
 ```{r}
 # removing columns we don't need
 listings.df = raw_listings.df %>%
-  select(-c(2:3, 9, 15:16, 23, 27, 35:38, 41:45, 47, 49:51, 61:64, 68:77))
+  select(-c(2:5, 9, 11, 20:23, 31:32, 44:47, 50, 52:54, 56, 58:59, 69, 71:74))
 
 #removing na from selected columns
 listings.df = listings.df %>%
@@ -126,10 +127,10 @@ reviews.df = raw_reviews.df %>%
   mutate(date = ymd(date),
          month = month(date),
          year = year(date),
-         quarter = case_when(month %in% c(1, 2, 3) ~ 'Q1',
-                             month %in% c(4, 5, 6) ~ 'Q2', 
-                             month %in% c(7, 8, 9) ~ 'Q3',
-                             month %in% c(10, 11, 12) ~ 'Q4'))
+         quarter = case_when(month %in% c(1:3) ~ 'Q1',
+                             month %in% c(4:6) ~ 'Q2', 
+                             month %in% c(7:9) ~ 'Q3',
+                             month %in% c(10:12) ~ 'Q4'))
 
 # merging price with columns
 reviews.df = raw_listings.df %>%
@@ -416,14 +417,14 @@ reviews.df %>%
   geom_bar(aes(fill = airbnb_red), show.legend = FALSE) +
   # geom_density(aes(date, after_stat(count)), show.legend = FALSE) +
   theme_few() +
-  scale_x_continuous(breaks = c(2009, 2010, 2011, 2012, 2013, 2014, 2015,
-                                2016, 2017, 2018, 2019, 2020, 2021, 2022)) +
-  labs(title = 'AirBNB usage throughout time',
+  scale_x_continuous(breaks = c(2009:2022)) +
+  scale_y_continuous(breaks = c(0, 5e5, 1e6, 1.5e6, 2e6),
+                     labels = c('0', '500K', '1M', '1.5M', '2M')) +
+  labs(title = 'Consumer Travel by Year',
        x = 'Year',
-       y = 'Count (Reviews)', 
+       y = 'Count', 
        color = FALSE)
-  ggsave('AirBNB Usage throughout time - HistDensityplot.png', width = 10, height = 6)
-  
+  ggsave('Travel by Year - Barplot.png', width = 10, height = 6)
 ```
 
 
@@ -439,36 +440,38 @@ listings.df %>%
   # facet_wrap(. ~ room_type, scales = 'free') +
   theme_few() +
   # scale_x_continuous(breaks = c(2010, 2015, 2020)) +
-  scale_x_continuous(breaks = c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015,
-                                2016, 2017, 2018, 2019, 2020, 2021, 2022)) +
+  scale_x_continuous(breaks = c(2008:2022)) +
   scale_y_continuous(breaks = c(5e4, 1e5, 1.5e5, 2e5), 
                      labels = c('50K', '100K', '150K', '200K')) +
   labs(title = 'Competition among AirBNB Hosts',
        x = 'Year',
        y = 'Property Hosts')
-  ggsave('AirBNB Properties through time - Barplot.png', width = 10, height = 6)
+  ggsave('Host Competition - Barplot.png', width = 10, height = 6)
   
 ```
 
-
+```{r}
+listings.df %>%
+```
 
 
 
 ```{r}
 reviews.df %>%
-  group_by(year) %>%
+  group_by(year, month) %>%
   summarise(price = mean(price)) %>%
-  ggplot(aes(x = year, y = price)) + 
+  ggplot(aes(month, price)) + 
   geom_point(aes(color = airbnb_red), show.legend = FALSE) +
   # geom_density(aes(price, after_stat(count)), show.legend = FALSE) +
   theme_few() +
-  # facet_wrap(. ~ month, scales = 'free') +
-  # scale_x_continuous(breaks = c(2009, 2010, 2011, 2012, 2013, 2014, 2015,
-  #                               2016, 2017, 2018, 2019, 2020, 2021, 2022)) +
-  labs(title = 'Average AirBNB costs per year',
-       x = 'Year',
+  facet_grid(. ~ year, scales = 'free') +
+  scale_y_continuous(breaks = c(50, 150, 250),
+                     labels = c('$50', '$150', '$250')) +
+  scale_x_continuous(breaks = NULL) +
+  labs(title = 'Average AirBNB costs throughout time',
+       x = 'Month',
        y = 'Price')
-  ggsave('AirBNB Cost per year - Scatterplot.png', width = 10, height = 6)
+  ggsave('Cost per time - Scatterplot.png', width = 10, height = 6)
 ```
 ```{r}
 reviews.df
@@ -481,30 +484,32 @@ reviews.df %>%
   summarise(price = mean(price)) %>%
   ggplot(aes(year, price)) +
   geom_point(aes(color = airbnb_red), show.legend = FALSE) +
-  facet_wrap(. ~ quarter)
+  facet_grid(. ~ quarter) + 
+  theme_few()
+  
 ```
 ```{r}
-listings.df %>%
-  na.omit(host_since) %>%
-  mutate(year = year(host_since), 
-         month = month(host_since),
-         quarter = case_when(month %in% c(1, 2, 3) ~ 'Q1',
-                             month %in% c(4, 5, 6) ~ 'Q2', 
-                             month %in% c(7, 8, 9) ~ 'Q3',
-                             month %in% c(10, 11, 12) ~ 'Q4')) %>%
-  ggplot(aes(year, number_of_reviews)) + 
-  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
-  facet_wrap(. ~ host_since, scales = 'free') +
-  theme_few() +
-  # scale_x_continuous(breaks = c(2010, 2015, 2020)) +
-  scale_x_continuous(breaks = c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015,
-                                2016, 2017, 2018, 2019, 2020, 2021, 2022)) +
-  scale_y_continuous(breaks = c(5e4, 1e5, 1.5e5, 2e5), 
-                     labels = c('50K', '100K', '150K', '200K')) +
-  labs(title = 'Competition among AirBNB Hosts',
-       x = 'Year',
-       y = 'Property Hosts')
-  ggsave('AirBNB Properties through time - Barplot.png', width = 10, height = 6)
+# listings.df %>%
+#   na.omit(host_since) %>%
+#   mutate(year = year(host_since), 
+#          month = month(host_since),
+#          quarter = case_when(month %in% c(1, 2, 3) ~ 'Q1',
+#                              month %in% c(4, 5, 6) ~ 'Q2', 
+#                              month %in% c(7, 8, 9) ~ 'Q3',
+#                              month %in% c(10, 11, 12) ~ 'Q4')) %>%
+#   ggplot(aes(year, number_of_reviews)) + 
+#   geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
+#   facet_wrap(. ~ host_since, scales = 'free') +
+#   theme_few() +
+#   # scale_x_continuous(breaks = c(2010, 2015, 2020)) +
+#   scale_x_continuous(breaks = c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015,
+#                                 2016, 2017, 2018, 2019, 2020, 2021, 2022)) +
+#   scale_y_continuous(breaks = c(5e4, 1e5, 1.5e5, 2e5), 
+#                      labels = c('50K', '100K', '150K', '200K')) +
+#   labs(title = 'Competition among AirBNB Hosts',
+#        x = 'Year',
+#        y = 'Property Hosts')
+#   ggsave('AirBNB Properties through time - Barplot.png', width = 10, height = 6)
 ```
 
 ```{r}
