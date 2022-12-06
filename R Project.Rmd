@@ -57,8 +57,11 @@ raw_reviews.df = files.reviews %>%
 raw_listings.df
 raw_reviews.df
 ```
+
 ```{r}
-raw_listings.df
+raw_listings.df %>%
+  mutate(id = parse_date_time(host_since, c('ymd', 'dmy', 'mdy')),
+         listing_url = year(id))
 ```
 
 *Cleaning up the data*
@@ -89,7 +92,8 @@ listings.df = listings.df %>%
               price, host_acceptance_rate, host_response_rate,
               availability_365), as.numeric),
          across(c(description, host_about), ~ str_count(., '\\s+') + 1),
-         across(c(host_since, last_review), ~ mdy(.)),
+         across(c(host_since, last_review), ~ 
+                  parse_date_time(., c('ymd', 'dmy', 'mdy'))),
          title_len = str_length(name),
          num_hosts = str_count(host_name, 'and|And|\\&') + 1,
          amenities_count = str_count(amenities, '"') / 2,
@@ -132,14 +136,19 @@ reviews.df = raw_reviews.df %>%
                              month %in% c(7:9) ~ 'Q3',
                              month %in% c(10:12) ~ 'Q4'))
 
-# merging price with columns
+# merging price with columns and roomtype
 reviews.df = raw_listings.df %>%
-  select(price, id) %>%
+  select(id, price, room_type, accommodates, bathrooms, bedrooms, beds, host_since) %>%
   mutate(price = as.integer(gsub(',|\\$|%|N/A', '', price))) %>%
   merge(., reviews.df, by.x = 'id',
         by.y = 'listing_id') %>%
   distinct()
 ```
+
+```{r}
+accommodates, bathrooms, bedrooms, beds, host_since
+```
+
 
 ```{r}
 listings.df
@@ -149,23 +158,23 @@ reviews.df
 
 ```{r}
 airbnb_red = 'FC642D'
-airbnb_red
+airbnb_green = '00A699'
 ```
 
 
 ```{r}
 listings.df %>%
-  # group_by(state) %>%
-  # mutate(price2 = mean(price)) %>%
-  # ungroup(state) %>%
   ggplot(aes(price, reorder(state, price))) +
   geom_boxplot(aes(fill = airbnb_red), show.legend = FALSE) +
   theme_few() +
+  scale_x_continuous(breaks = c(100, 200, 300),
+                     labels = c('$100', '$200', '$300'),
+                     limits = c(0, 400)) +
   labs(title = 'Average Cost by State',
        x = 'Price per night (USD)',
        y = 'State', 
        color = FALSE)
-  ggsave('AirBNB Cost by State - Boxplot.png', width = 10, height = 6)
+  ggsave('Cost by State - Boxplot.png', width = 10, height = 6)
 ```
 
 ```{r pressure, echo=FALSE}
@@ -175,10 +184,13 @@ listings.df %>%
   ggplot(aes(price, reorder(state, price))) +
   geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
   theme_few() +
+  scale_x_continuous(breaks = c(0, 100, 200),
+                     labels = c(0, '$100', '$200'),
+                     limits = c(0, 300)) +
   labs(title = 'Average Cost by State',
        x = 'Price per night (USD)',
        y = 'State')
-  ggsave('AirBNB Cost by State - Barplot.png', width = 10, height = 6)
+  ggsave('Cost by State - Barplot.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -188,6 +200,9 @@ listings.df %>%
   geom_col(aes(color = airbnb_red), show.legend = FALSE) +
   facet_wrap(. ~ room_type, scales = 'free') +
   theme_few() +
+  scale_x_continuous(breaks = c(0, 200, 400),
+                     labels = c(0, '$200', '$400'),
+                     limits = c(0, 400)) +
   labs(title = 'Room Cost vs. Reviews',
        color = 'Room Type',
        x = 'Price per night (USD)',
@@ -326,7 +341,7 @@ listings.df %>%
   labs(title = 'Price Distribution by Property', 
        x = 'Price (USD)', 
        y = 'Density')
-ggsave('Price Distribution by Property - Density.png', width = 10, height = 6)
+ggsave('Price Property Distribution - Density.png', width = 10, height = 6)
 ```
 
 
@@ -451,9 +466,16 @@ listings.df %>%
 ```
 
 ```{r}
-listings.df %>%
+# look at compression nights
+reviews.df %>%
+  group_by(year) %>%
+  
 ```
 
+```{r}
+reviews.df
+listings.df
+```
 
 
 ```{r}
@@ -462,12 +484,12 @@ reviews.df %>%
   summarise(price = mean(price)) %>%
   ggplot(aes(month, price)) + 
   geom_point(aes(color = airbnb_red), show.legend = FALSE) +
-  # geom_density(aes(price, after_stat(count)), show.legend = FALSE) +
+  geom_smooth(aes(color = airbnb_green), show.legend = FALSE, se = FALSE) +
   theme_few() +
-  facet_grid(. ~ year, scales = 'free') +
+  facet_grid(. ~ year) +
   scale_y_continuous(breaks = c(50, 150, 250),
                      labels = c('$50', '$150', '$250')) +
-  scale_x_continuous(breaks = NULL) +
+  scale_x_continuous(breaks = c(3, 6, 9)) +
   labs(title = 'Average AirBNB costs throughout time',
        x = 'Month',
        y = 'Price')
@@ -488,33 +510,103 @@ reviews.df %>%
   theme_few()
   
 ```
+
+
 ```{r}
-# listings.df %>%
-#   na.omit(host_since) %>%
-#   mutate(year = year(host_since), 
-#          month = month(host_since),
-#          quarter = case_when(month %in% c(1, 2, 3) ~ 'Q1',
-#                              month %in% c(4, 5, 6) ~ 'Q2', 
-#                              month %in% c(7, 8, 9) ~ 'Q3',
-#                              month %in% c(10, 11, 12) ~ 'Q4')) %>%
-#   ggplot(aes(year, number_of_reviews)) + 
-#   geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
-#   facet_wrap(. ~ host_since, scales = 'free') +
-#   theme_few() +
-#   # scale_x_continuous(breaks = c(2010, 2015, 2020)) +
-#   scale_x_continuous(breaks = c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015,
-#                                 2016, 2017, 2018, 2019, 2020, 2021, 2022)) +
-#   scale_y_continuous(breaks = c(5e4, 1e5, 1.5e5, 2e5), 
-#                      labels = c('50K', '100K', '150K', '200K')) +
-#   labs(title = 'Competition among AirBNB Hosts',
-#        x = 'Year',
-#        y = 'Property Hosts')
-#   ggsave('AirBNB Properties through time - Barplot.png', width = 10, height = 6)
+gas.df = read_csv('./gas_prices.csv', show_col_types = FALSE)
+gas.df = gas.df %>%
+  mutate(date = mdy(date),
+         month = month(date),
+         year = year(date))
+
+gas.df %>%
+  group_by(year, month) %>%
+  summarise(price = mean(price)) %>%
+  ggplot(aes(month, price)) + 
+  geom_point(aes(color = airbnb_red), show.legend = FALSE) +
+  geom_smooth(aes(color = airbnb_green), show.legend = FALSE, se = FALSE) +
+  theme_few() +
+  facet_grid(. ~ year) +
+  labs(title = 'US Gasoline Costs throughout Time',
+       x = 'Month',
+       y = 'Price')
+  ggsave('Gas Cost per time - Scatterplot.png', width = 10, height = 6)
+```
+
+```{r}
+reviews.df
+  
+```
+
+```{r}
+reviews.df %>%
+  group_by(month) %>%
+  summarise(year = year, count = n()) %>%
+  ggplot(aes(month, count)) +
+  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
+  scale_x_continuous(breaks = c(1:12)) +
+  scale_y_continuous(breaks = c(0, 2.5e5, 5e5, 7.5e5, 1e6),
+                     labels = c(0, '250K', '500K', '750K', '1M')) +
+  theme_few() +
+  
+  labs(title = 'Varying cost through Seasons',
+       x = 'Month',
+       y = 'Count')
+  ggsave('Seasonal Cost - Scatterplot.png', width = 10, height = 6)
+```
+
+```{r}
+reviews.df
+```
+
+
+```{r}
+reviews.df %>%
+  group_by(month, year) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count), year) %>%
+  summarise(first(year, count))
+```
+
+```{r}
+df = listings.df %>%
+  select(id, host_since) %>%
+  merge(., reviews.df %>% select(id, year),  by = 'id')
+```
+
+
+```{r}
+df %>%
+  mutate(host_since = year(host_since)) %>%
+  group_by(host_since) %>%
+  summarise(count = n())
+```
+
+```{r}
+combined.df = listings.df %>%
+  select(id, accommodates, bathrooms, bedrooms, beds, host_since) %>%
+  merge(., reviews.df, by = 'id')
+  
 ```
 
 ```{r}
 listings.df %>%
-  select(host_since, price) %>%
-  mutate(month = )
+  na.omit(host_since) %>%
+  mutate(host_since = year(host_since)) %>%
+  # group_by(host_since) %>%
+  # summarise(count = n()) %>%
+  ggplot(aes(host_since, number_of_reviews)) + 
+  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
+  # facet_wrap(. ~ room_type, scales = 'free') +
+  theme_few() +
+  # scale_x_continuous(breaks = c(2010, 2015, 2020)) +
+  scale_x_continuous(breaks = c(2008:2022)) +
+  scale_y_continuous(breaks = c(5e4, 1e5, 1.5e5, 2e5), 
+                     labels = c('50K', '100K', '150K', '200K')) 
+  # labs(title = 'Competition among AirBNB Hosts',
+  #      x = 'Year',
+  #      y = 'Property Hosts')
+  # ggsave('Host Competition - Barplot.png', width = 10, height = 6)
+  
 ```
 
