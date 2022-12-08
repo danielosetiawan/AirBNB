@@ -58,11 +58,8 @@ raw_listings.df
 raw_reviews.df
 ```
 
-```{r}
-raw_listings.df %>%
-  mutate(id = parse_date_time(host_since, c('ymd', 'dmy', 'mdy')),
-         listing_url = year(id))
-```
+
+
 
 *Cleaning up the data*
 
@@ -137,7 +134,7 @@ reviews.df = raw_reviews.df %>%
                              month %in% c(10:12) ~ 'Q4'))
 
 # merging price with columns and roomtype
-reviews.df = raw_listings.df %>%
+reviews.df = listings.df %>%
   select(id, price, room_type, accommodates, bathrooms, bedrooms, beds, host_since) %>%
   mutate(price = as.integer(gsub(',|\\$|%|N/A', '', price))) %>%
   merge(., reviews.df, by.x = 'id',
@@ -145,15 +142,14 @@ reviews.df = raw_listings.df %>%
   distinct()
 ```
 
-```{r}
-accommodates, bathrooms, bedrooms, beds, host_since
-```
-
 
 ```{r}
 listings.df
 reviews.df
 ```
+
+
+
 *Analysis*
 
 ```{r}
@@ -222,7 +218,7 @@ listings.df %>%
        y = 'Number of Reviews') +
   scale_x_continuous(breaks = c(0, 250, 500), labels = c('0', '$250', '$500')) +
   scale_y_continuous(breaks = c(0, 500, 1e3, 1.5e3, 2e3), 
-                     labels = c('0', '0.5K', '1K', '1.5K', '2K'))
+                     labels = c(0, '0.5K', '1K', '1.5K', '2K'))
   ggsave('Distribution of Reviews - Scatter.png', width = 10, height = 6)
 ```
 
@@ -238,7 +234,7 @@ listings.df %>%
   labs(title = 'Review Count by City',
        x = 'Number of Reviews',
        y = 'City') +
-  scale_x_continuous(breaks = c(0, 5e5, 1e6), labels = c('0', '500K', '1M'))
+  scale_x_continuous(breaks = c(0, 5e5, 1e6), labels = c(0, '500K', '1M'))
   ggsave('Reviews by City - Barplot.png', width = 10, height = 6)
 ```
 
@@ -292,20 +288,16 @@ amenities.df %>%
     labs(title = 'Amenities Offered by Hosts',
        x = 'Count',
        y = 'Amenities') +
-    scale_x_continuous(breaks = c(0, 7.5e4, 1.5e5, 2.25e5), labels = c('0', '75K', '150K', '225K'))
-  ggsave('Amenities Offered by Hosts - Barplot.png', width = 10, height = 6)
+    scale_x_continuous(breaks = c(0, 7.5e4, 1.5e5, 2.25e5), labels = c(0, '75K', '150K', '225K'))
+  ggsave('Offered Amenities - Barplot.png', width = 10, height = 6)
 ```
-
-
-
-
 
 ```{r}
 listings.df %>%
   filter(grepl('ishwasher', amenities))
 ```
 
-
+# is host superhost
 ```{r}
 listings.df %>%
   na.omit(host_is_superhost) %>%
@@ -315,6 +307,7 @@ listings.df %>%
   theme_few()
   
 ```
+
 ```{r}
 listings.df %>%
   group_by(room_type) %>%
@@ -341,7 +334,7 @@ listings.df %>%
   labs(title = 'Price Distribution by Property', 
        x = 'Price (USD)', 
        y = 'Density')
-ggsave('Price Property Distribution - Density.png', width = 10, height = 6)
+ggsave('Property Distribution - Density.png', width = 10, height = 6)
 ```
 
 
@@ -358,9 +351,11 @@ listings.df %>%
   labs(title = 'Popularity by Property',
    x = 'Count',
    y = 'Room Type') +
-  scale_x_continuous(breaks = c(0, 2.5e4, 5e4, 7.5e4), labels = c('0', '25K', '50K', '75K'))
+  scale_x_continuous(breaks = c(0, 2.5e4, 5e4, 7.5e4), 
+                     labels = c(0, '25K', '50K', '75K'))
 ggsave('Popularity by Property - Barplot.png', width = 10, height = 6)
 ```
+
 ```{r}
 
 var_ = listings.df$host_total_listings_count
@@ -430,14 +425,13 @@ reviews.df %>%
 reviews.df %>%
   ggplot(aes(year)) + 
   geom_bar(aes(fill = airbnb_red), show.legend = FALSE) +
-  # geom_density(aes(date, after_stat(count)), show.legend = FALSE) +
   theme_few() +
   scale_x_continuous(breaks = c(2009:2022)) +
   scale_y_continuous(breaks = c(0, 5e5, 1e6, 1.5e6, 2e6),
-                     labels = c('0', '500K', '1M', '1.5M', '2M')) +
+                     labels = c(0, '500K', '1M', '1.5M', '2M')) +
   labs(title = 'Consumer Travel by Year',
        x = 'Year',
-       y = 'Count', 
+       y = 'Reviews', 
        color = FALSE)
   ggsave('Travel by Year - Barplot.png', width = 10, height = 6)
 ```
@@ -448,28 +442,38 @@ reviews.df %>%
 listings.df %>%
   na.omit(host_since) %>%
   mutate(host_since = year(host_since)) %>%
-  # group_by(host_since) %>%
-  # summarise(count = n()) %>%
   ggplot(aes(host_since, number_of_reviews)) + 
   geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
-  # facet_wrap(. ~ room_type, scales = 'free') +
+  
+  # facet_wrap(. ~ state, scales = 'free') +
   theme_few() +
-  # scale_x_continuous(breaks = c(2010, 2015, 2020)) +
   scale_x_continuous(breaks = c(2008:2022)) +
-  scale_y_continuous(breaks = c(5e4, 1e5, 1.5e5, 2e5), 
-                     labels = c('50K', '100K', '150K', '200K')) +
+  scale_y_continuous(breaks = c(0, 1.25e5, 2.5e5), 
+                     labels = c(0, '125K', '250K')) +
   labs(title = 'Competition among AirBNB Hosts',
        x = 'Year',
-       y = 'Property Hosts')
+       y = 'New Hosts')
   ggsave('Host Competition - Barplot.png', width = 10, height = 6)
   
 ```
 
 ```{r}
 # look at compression nights
-reviews.df %>%
-  group_by(year) %>%
-  
+listings.df %>%
+  na.omit(host_since) %>%
+  mutate(host_since = month(host_since)) %>%
+  ggplot(aes(host_since, number_of_reviews)) + 
+  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
+  geom_smooth() + 
+  # facet_wrap(. ~ state, scales = 'free') +
+  theme_few() +
+  scale_x_continuous(breaks = c(1:12)) +
+  scale_y_continuous(breaks = c(0, 7.5e4, 1.50e5), 
+                     labels = c(0, '75K', '150K')) +
+  labs(title = 'Competition among AirBNB Hosts',
+       x = 'Month',
+       y = 'New Hosts')
+  ggsave('Host Competition Month - Barplot.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -483,8 +487,10 @@ reviews.df %>%
   group_by(year, month) %>%
   summarise(price = mean(price)) %>%
   ggplot(aes(month, price)) + 
-  geom_point(aes(color = airbnb_red), show.legend = FALSE) +
-  geom_smooth(aes(color = airbnb_green), show.legend = FALSE, se = FALSE) +
+  geom_point(aes(color = airbnb_red), 
+             show.legend = FALSE) +
+  geom_smooth(aes(color = airbnb_green), 
+              show.legend = FALSE, se = FALSE) +
   theme_few() +
   facet_grid(. ~ year) +
   scale_y_continuous(breaks = c(50, 150, 250),
@@ -495,10 +501,6 @@ reviews.df %>%
        y = 'Price')
   ggsave('Cost per time - Scatterplot.png', width = 10, height = 6)
 ```
-```{r}
-reviews.df
-listings.df
-```
 
 ```{r}
 reviews.df %>%
@@ -508,7 +510,6 @@ reviews.df %>%
   geom_point(aes(color = airbnb_red), show.legend = FALSE) +
   facet_grid(. ~ quarter) + 
   theme_few()
-  
 ```
 
 
@@ -522,11 +523,13 @@ gas.df = gas.df %>%
 gas.df %>%
   group_by(year, month) %>%
   summarise(price = mean(price)) %>%
+  filter(year > 2008) %>%
   ggplot(aes(month, price)) + 
-  geom_point(aes(color = airbnb_red), show.legend = FALSE) +
-  geom_smooth(aes(color = airbnb_green), show.legend = FALSE, se = FALSE) +
+  geom_col(aes(color = airbnb_red), show.legend = FALSE) +
+  # geom_smooth(aes(color = airbnb_green), show.legend = FALSE, se = FALSE) +
   theme_few() +
   facet_grid(. ~ year) +
+  scale_x_continuous(breaks = c(3, 6, 9)) +
   labs(title = 'US Gasoline Costs throughout Time',
        x = 'Month',
        y = 'Price')
@@ -538,75 +541,74 @@ reviews.df
   
 ```
 
+# Seasonal Costs
 ```{r}
 reviews.df %>%
-  group_by(month) %>%
-  summarise(year = year, count = n()) %>%
-  ggplot(aes(month, count)) +
-  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
+  ggplot(aes(month)) +
+  geom_bar(aes(fill = airbnb_red), show.legend = FALSE) +
   scale_x_continuous(breaks = c(1:12)) +
   scale_y_continuous(breaks = c(0, 2.5e5, 5e5, 7.5e5, 1e6),
                      labels = c(0, '250K', '500K', '750K', '1M')) +
   theme_few() +
-  
-  labs(title = 'Varying cost through Seasons',
+  labs(title = 'Seasonal Nightly Costs',
        x = 'Month',
        y = 'Count')
   ggsave('Seasonal Cost - Scatterplot.png', width = 10, height = 6)
 ```
 
-```{r}
-reviews.df
-```
-
-
+# Accommodation Requests - Barplot
 ```{r}
 reviews.df %>%
-  group_by(month, year) %>%
+  group_by(year, accommodates) %>%
   summarise(count = n()) %>%
-  arrange(desc(count), year) %>%
-  summarise(first(year, count))
+  ggplot(aes(accommodates, count)) +
+  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
+  facet_grid(. ~ year, scales = 'free') +
+  scale_x_continuous(breaks = c(3, 6, 9),
+                     limits = c(0, 10)) +
+  scale_y_continuous(breaks = c(0, 2e5, 4e5, 6e5),
+                     labels = c(0, '200K', '400K', '600K')) +
+  theme_few() +
+  labs(title = 'Accommodation Requests',
+       x = 'Number of Guests',
+       y = 'Count')
+  ggsave('Accommodation Requests - Barplot.png', width = 10, height = 6)
 ```
 
+# reviews df, accommodation pct
 ```{r}
-df = listings.df %>%
-  select(id, host_since) %>%
-  merge(., reviews.df %>% select(id, year),  by = 'id')
+df = reviews.df %>%
+  group_by(year) %>%
+  transmute(total_count = n(),
+            accommodates = accommodates) %>%
+  group_by(year, accommodates) %>%
+  filter(accommodates <= 10) %>%
+  summarise(pct = 100 * (round(n() / total_count, 4))) %>%
+  distinct()
+df
 ```
 
-
+# Accommodation Requests - SmoothPlot
 ```{r}
 df %>%
-  mutate(host_since = year(host_since)) %>%
-  group_by(host_since) %>%
-  summarise(count = n())
-```
-
-```{r}
-combined.df = listings.df %>%
-  select(id, accommodates, bathrooms, bedrooms, beds, host_since) %>%
-  merge(., reviews.df, by = 'id')
-  
-```
-
-```{r}
-listings.df %>%
-  na.omit(host_since) %>%
-  mutate(host_since = year(host_since)) %>%
-  # group_by(host_since) %>%
-  # summarise(count = n()) %>%
-  ggplot(aes(host_since, number_of_reviews)) + 
-  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
-  # facet_wrap(. ~ room_type, scales = 'free') +
+  mutate(year = as.character(year)) %>%
+  filter(!year == 2009) %>%
+  ggplot(aes(accommodates, pct)) +
+  geom_smooth(aes(color = year), se = FALSE) +
+  scale_x_continuous(breaks = c(1:5),
+                     limits = c(1, 5)) +
+  scale_y_continuous(breaks = c(0, 25, 50),
+                     labels = c(0, '25%', '50%')) +
   theme_few() +
-  # scale_x_continuous(breaks = c(2010, 2015, 2020)) +
-  scale_x_continuous(breaks = c(2008:2022)) +
-  scale_y_continuous(breaks = c(5e4, 1e5, 1.5e5, 2e5), 
-                     labels = c('50K', '100K', '150K', '200K')) 
-  # labs(title = 'Competition among AirBNB Hosts',
-  #      x = 'Year',
-  #      y = 'Property Hosts')
-  # ggsave('Host Competition - Barplot.png', width = 10, height = 6)
+  labs(title = 'Accommodation Requests',
+       x = 'Accommodations',
+       y = 'Percent')
+  ggsave('Accommodation Requests - SmoothPlot.png', width = 10, height = 6)
   
+``` 
+
+
+```{r}
+
 ```
 
