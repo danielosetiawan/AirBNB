@@ -140,6 +140,14 @@ reviews.df = listings.df %>%
   merge(., reviews.df, by.x = 'id',
         by.y = 'listing_id') %>%
   distinct()
+
+# to avoid null values in listings.df
+price.df = raw_listings.df %>%
+  select(id, price) %>%
+  mutate(price = as.integer(gsub(',|\\$|%|N/A', '', price))) %>%
+  merge(., reviews.df, by.x = 'id',
+        by.y = 'listing_id') %>%
+  distinct()
 ```
 
 
@@ -444,8 +452,6 @@ listings.df %>%
   mutate(host_since = year(host_since)) %>%
   ggplot(aes(host_since, number_of_reviews)) + 
   geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
-  
-  # facet_wrap(. ~ state, scales = 'free') +
   theme_few() +
   scale_x_continuous(breaks = c(2008:2022)) +
   scale_y_continuous(breaks = c(0, 1.25e5, 2.5e5), 
@@ -453,7 +459,7 @@ listings.df %>%
   labs(title = 'Competition among AirBNB Hosts',
        x = 'Year',
        y = 'New Hosts')
-  ggsave('Host Competition - Barplot.png', width = 10, height = 6)
+  ggsave('Competition among hosts year - Barplot.png', width = 10, height = 6)
   
 ```
 
@@ -461,19 +467,20 @@ listings.df %>%
 # look at compression nights
 listings.df %>%
   na.omit(host_since) %>%
-  mutate(host_since = month(host_since)) %>%
-  ggplot(aes(host_since, number_of_reviews)) + 
-  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
-  geom_smooth() + 
+  mutate(host_since = as.character(month(host_since))) %>%
+  ggplot(aes(reorder(host_since, as.integer(host_since)),
+             number_of_reviews)) + 
+  geom_violin(aes(fill = airbnb_red), show.legend = FALSE) +
+  # geom_smooth() + 
   # facet_wrap(. ~ state, scales = 'free') +
   theme_few() +
-  scale_x_continuous(breaks = c(1:12)) +
-  scale_y_continuous(breaks = c(0, 7.5e4, 1.50e5), 
-                     labels = c(0, '75K', '150K')) +
+  # scale_x_continuous(breaks = c(1:12)) +
+  # scale_y_continuous(breaks = c(0, 7.5e4, 1.50e5), 
+  #                    labels = c(0, '75K', '150K')) +
   labs(title = 'Competition among AirBNB Hosts',
        x = 'Month',
        y = 'New Hosts')
-  ggsave('Host Competition Month - Barplot.png', width = 10, height = 6)
+  ggsave('Competition among hosts month - violin.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -483,7 +490,7 @@ listings.df
 
 
 ```{r}
-reviews.df %>%
+price.df %>%
   group_by(year, month) %>%
   summarise(price = mean(price)) %>%
   ggplot(aes(month, price)) + 
@@ -505,7 +512,7 @@ reviews.df %>%
 ```{r}
 reviews.df %>%
   group_by(quarter, year) %>%
-  summarise(price = mean(price)) %>%
+  summarise(price = median(price)) %>%
   ggplot(aes(year, price)) +
   geom_point(aes(color = airbnb_red), show.legend = FALSE) +
   facet_grid(. ~ quarter) + 
@@ -606,9 +613,4 @@ df %>%
   ggsave('Accommodation Requests - SmoothPlot.png', width = 10, height = 6)
   
 ``` 
-
-
-```{r}
-
-```
 
