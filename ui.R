@@ -1,19 +1,18 @@
-#myApp2
+# AirBNB RProject
 
 library(shinydashboard)
-uimonth =
 
 dashboardPage(
-  dashboardHeader(title = 'NYC '),
+  dashboardHeader(title = 'AirBNB Data in US'),
   dashboardSidebar(
     sidebarUserPanel('Mr. Hamilton',
                      image = './img/hammi.jpeg'),
-    selectizeInput(inputId = 'origin',
-                   label = 'Departure airport',
-                   choices = unique(flights$origin)),
-    selectizeInput(inputId = 'dest',
-                   label = 'Arrival airport',
-                   choices = unique(flights$dest)), 
+    selectizeInput(inputId = 'city',
+                   label = 'City',
+                   choices = c('All', unique(listings_df$city))),
+    selectizeInput(inputId = 'state',
+                   label = 'State',
+                   choices = unique(listings_df$state)), 
     sidebarMenu(
       menuItem("Plots", tabName = "plots", icon = icon("truck-monster")),
       menuItem("Data", tabName = "data", icon = icon("database"))

@@ -1,9 +1,17 @@
-#myApp2
+# AirBNB RProject
 
 library(shiny)
-library(ggplot2)
+library(DT)
 library(dplyr)
 library(tidyr)
-library(DT)
+library(ggplot2)
+library(lubridate)
+library(ggthemes)
+library(tidyverse)
+library(fst)
 
-flights = read.csv(file = './flights14.csv')
+listings_df = read.fst('./listings.fst')
+reviews_df = read.fst('./reviews.fst')
+airbnb_red = 'FC642D'
+airbnb_green = '00A699'
+

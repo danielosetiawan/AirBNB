@@ -1,8 +1,10 @@
 ---
 title: "R Project"
-output: html_document
+author: "Daniel Setiawan"
 date: "2022-11-25"
-author: 'Daniel Setiawan'
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -13,6 +15,7 @@ library(ggplot2)
 library(lubridate)
 library(ggthemes)
 library(tidyverse)
+library(fst)
 ```
 
 *Data* <http://insideairbnb.com/get-the-data> column name dictionary: <https://docs.google.com/spreadsheets/d/1b_dvmyhb_kAJhUmv81rAxl4KcXn0Pymz>
@@ -57,8 +60,6 @@ raw_reviews.df = files.reviews %>%
 raw_listings.df
 raw_reviews.df
 ```
-
-
 
 
 *Cleaning up the data*
@@ -152,11 +153,24 @@ price.df = raw_listings.df %>%
 
 
 ```{r}
-listings.df
-reviews.df
+# for shiny app
+listings.df %>%
+  select(c(1, 7, 14, 19, 21:27, 29, 36, 39:45, 48:49)) %>%
+  mutate(across(c(beds, bedrooms, bathrooms, accommodates, city, state, 
+                  price, host_total_listings_count), as.factor)) %>%
+  write.fst('./listings.fst')
+
+reviews.df %>%
+  mutate(across(c(id, price, accommodates, bathrooms, bedrooms, beds, 
+                  month, year, quarter), as.factor)) %>%
+  write.fst('./reviews.fst')
 ```
 
-
+```{r}
+# for shiny app
+write_csv(listings.df, './listings_full.csv')
+write_csv(reviews.df, './reviews_full.csv')
+```
 
 *Analysis*
 
@@ -273,6 +287,10 @@ amenities.df = listings.df %>%
                                grepl('pillows|blankets|linens', amenities) ~ 'linens',
                                TRUE ~ amenities)) %>%
   distinct()
+```
+
+```{r}
+amenities.df
 ```
 
 
