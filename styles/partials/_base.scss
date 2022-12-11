@@ -1,0 +1,39 @@
+body {
+  @include flex-center;
+  background-color: $ashLight;
+  flex-direction: column;
+  margin: 0;
+  min-height: 100vh;
+  padding-top: rem(70px);
+
+  @include mediaFrom($breakSm) {
+    padding: rem(90px) rem(30px) rem(50px);
+  }
+}
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+*:focus {
+  outline: none;
+}
+
+.dashboard {
+  background-color: $white;
+  box-shadow: $boxShadowLarge;
+  max-width: $maxContentWidth;
+  padding: rem(15px);
+  width: 100%;
+
+  @include mediaFrom($breakSm) {
+    border-radius: $filletLarge;
+    padding: rem(25px);
+  }
+}

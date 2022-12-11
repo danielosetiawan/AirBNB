@@ -1,0 +1,30 @@
+.logo {
+  color: $navy;
+  fill: $navy;
+  text-decoration: none;
+  transition: color $hoverTransition, fill $hoverTransition;
+
+  &:hover {
+    color: $blue;
+    fill: $blue;
+  }
+}
+
+.logo-dashboard {
+  width: $dashboardLogoWidth;
+}
+
+.logo-main {
+  @include flex-center;
+  fill: $gray;
+  width: $mainLogoWidth * 2/3;
+
+  @include mediaFrom($breakSm) {
+    fill: $ash;
+    width: $mainLogoWidth;
+  }
+}
+
+.logo-svg {
+  width: 100%;
+}

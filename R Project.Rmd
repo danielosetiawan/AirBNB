@@ -151,26 +151,66 @@ price.df = raw_listings.df %>%
   distinct()
 ```
 
+```{r}
+listings.df
+```
+
 
 ```{r}
 # for shiny app
 listings.df %>%
-  select(c(1, 7, 14, 19, 21:27, 29, 36, 39:45, 48:49)) %>%
-  mutate(across(c(beds, bedrooms, bathrooms, accommodates, city, state, 
-                  price, host_total_listings_count), as.factor)) %>%
+  select(c(1, 7, 14, 19:27, 29, 36, 39:45, 48:49)) %>%
+  # mutate(across(c(city, state), as.factor)) %>%
   write.fst('./listings.fst')
 
 reviews.df %>%
-  mutate(across(c(id, price, accommodates, bathrooms, bedrooms, beds, 
-                  month, year, quarter), as.factor)) %>%
+  mutate(across(c(id, quarter, year, accommodates), as.factor), 
+         day = day(date)) %>%
+  select(-c(bathrooms, bedrooms, date)) %>%
   write.fst('./reviews.fst')
 ```
 
 ```{r}
-# for shiny app
-write_csv(listings.df, './listings_full.csv')
-write_csv(reviews.df, './reviews_full.csv')
+listings.df = read.fst('./listings.fst')
+reviews.df = read.fst('./reviews.fst')
 ```
+
+```{r}
+raw_listings.df %>%
+  filter(state == 'NY') %>%
+  distinct(neighbourhood_group_cleansed)
+```
+
+
+```{r}
+df2 = listings_df %>%
+  filter(state == 'FL')
+
+length(unique(df2$city))
+```
+
+
+```{r}
+read.fst('./listings.fst') %>%
+  filter(state == 'CA' & city == 'los angeles') %>%
+  ggplot(aes(price, host_total_listings_count)) +
+  geom_smooth(se = FALSE)
+```
+
+
+```{r}
+listings.df %>%
+  filter(state == 'CA' & city == 'los angeles') %>%
+  ggplot(aes(price)) +
+      geom_density(aes(fill = airbnb_red), show.legend = FALSE) +
+      scale_x_continuous(breaks = c(0, 250, 500)) +
+      facet_grid(. ~ room_type, scales = 'free') +
+      theme_few() +
+      labs(title = 'Price Distribution by Property', 
+           x = 'Price (USD)', 
+           y = 'Density')
+```
+
 
 *Analysis*
 
@@ -192,7 +232,7 @@ listings.df %>%
        x = 'Price per night (USD)',
        y = 'State', 
        color = FALSE)
-  ggsave('Cost by State - Boxplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Cost by State - Boxplot.png', width = 10, height = 6)
 ```
 
 ```{r pressure, echo=FALSE}
@@ -208,7 +248,7 @@ listings.df %>%
   labs(title = 'Average Cost by State',
        x = 'Price per night (USD)',
        y = 'State')
-  ggsave('Cost by State - Barplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Cost by State - Barplot.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -225,7 +265,7 @@ listings.df %>%
        color = 'Room Type',
        x = 'Price per night (USD)',
        y = 'Number of Reviews')
-  ggsave('Room Cost by Reviews.png', width = 10, height = 6)
+  ggsave('./visualizations/Room Cost by Reviews.png', width = 10, height = 6)
 ```
 
 
@@ -241,7 +281,7 @@ listings.df %>%
   scale_x_continuous(breaks = c(0, 250, 500), labels = c('0', '$250', '$500')) +
   scale_y_continuous(breaks = c(0, 500, 1e3, 1.5e3, 2e3), 
                      labels = c(0, '0.5K', '1K', '1.5K', '2K'))
-  ggsave('Distribution of Reviews - Scatter.png', width = 10, height = 6)
+  ggsave('./visualizations/Distribution of Reviews - Scatter.png', width = 10, height = 6)
 ```
 
 
@@ -257,7 +297,7 @@ listings.df %>%
        x = 'Number of Reviews',
        y = 'City') +
   scale_x_continuous(breaks = c(0, 5e5, 1e6), labels = c(0, '500K', '1M'))
-  ggsave('Reviews by City - Barplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Reviews by City - Barplot.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -315,7 +355,7 @@ amenities.df %>%
        x = 'Count',
        y = 'Amenities') +
     scale_x_continuous(breaks = c(0, 7.5e4, 1.5e5, 2.25e5), labels = c(0, '75K', '150K', '225K'))
-  ggsave('Offered Amenities - Barplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Offered Amenities - Barplot.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -360,7 +400,7 @@ listings.df %>%
   labs(title = 'Price Distribution by Property', 
        x = 'Price (USD)', 
        y = 'Density')
-ggsave('Property Distribution - Density.png', width = 10, height = 6)
+ggsave('./visualizations/Property Distribution - Density.png', width = 10, height = 6)
 ```
 
 
@@ -379,7 +419,7 @@ listings.df %>%
    y = 'Room Type') +
   scale_x_continuous(breaks = c(0, 2.5e4, 5e4, 7.5e4), 
                      labels = c(0, '25K', '50K', '75K'))
-ggsave('Popularity by Property - Barplot.png', width = 10, height = 6)
+ggsave('./visualizations/Popularity by Property - Barplot.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -399,7 +439,7 @@ subset(listings.df, var_ > lower & var_ < upper) %>%
        x = 'State',
        y = 'Hosts - Total Listings') 
     # scale_y_continuous(breaks = c(0, 2.5e6, 5e6, 7.5e6, 1e7), labels = c('0', '2.5M', '5M', '7.5M', '10M'))
-  ggsave('Property Saturation - Boxplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Property Saturation - Boxplot.png', width = 10, height = 6)
   
 ```
 
@@ -459,7 +499,7 @@ reviews.df %>%
        x = 'Year',
        y = 'Reviews', 
        color = FALSE)
-  ggsave('Travel by Year - Barplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Travel by Year - Barplot.png', width = 10, height = 6)
 ```
 
 
@@ -477,7 +517,7 @@ listings.df %>%
   labs(title = 'Competition among AirBNB Hosts',
        x = 'Year',
        y = 'New Hosts')
-  ggsave('Competition among hosts year - Barplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Competition among hosts year - Barplot.png', width = 10, height = 6)
   
 ```
 
@@ -498,7 +538,7 @@ listings.df %>%
   labs(title = 'Competition among AirBNB Hosts',
        x = 'Month',
        y = 'New Hosts')
-  ggsave('Competition among hosts month - violin.png', width = 10, height = 6)
+  ggsave('./visualizations/Competition among hosts month - violin.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -524,7 +564,7 @@ price.df %>%
   labs(title = 'Average AirBNB costs throughout time',
        x = 'Month',
        y = 'Price')
-  ggsave('Cost per time - Scatterplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Cost per time - Scatterplot.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -558,7 +598,7 @@ gas.df %>%
   labs(title = 'US Gasoline Costs throughout Time',
        x = 'Month',
        y = 'Price')
-  ggsave('Gas Cost per time - Scatterplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Gas Cost per time - Scatterplot.png', width = 10, height = 6)
 ```
 
 ```{r}
@@ -578,7 +618,7 @@ reviews.df %>%
   labs(title = 'Seasonal Nightly Costs',
        x = 'Month',
        y = 'Count')
-  ggsave('Seasonal Cost - Scatterplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Seasonal Cost - Scatterplot.png', width = 10, height = 6)
 ```
 
 # Accommodation Requests - Barplot
@@ -597,7 +637,7 @@ reviews.df %>%
   labs(title = 'Accommodation Requests',
        x = 'Number of Guests',
        y = 'Count')
-  ggsave('Accommodation Requests - Barplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Accommodation Requests - Barplot.png', width = 10, height = 6)
 ```
 
 # reviews df, accommodation pct
@@ -628,7 +668,7 @@ df %>%
   labs(title = 'Accommodation Requests',
        x = 'Accommodations',
        y = 'Percent')
-  ggsave('Accommodation Requests - SmoothPlot.png', width = 10, height = 6)
+  ggsave('./visualizations/Accommodation Requests - SmoothPlot.png', width = 10, height = 6)
   
 ``` 
 

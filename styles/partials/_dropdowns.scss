@@ -1,0 +1,124 @@
+@mixin dropdown {
+
+  .selectize-control.single {
+    margin-bottom: 0;
+
+    .selectize-input {
+      align-items: center;
+      background: none;
+      display: flex;
+      justify-content: space-between;
+
+      // text in tiles headers
+      & > .item {
+        font-size: rem(14px);
+        font-weight: 500;
+      }
+
+      &::after {
+        background-color: $grayDark;
+        border: none;
+        content: "";
+        display: flex;
+        height: $dropdownIconSizeSmall;
+        margin: 0;
+        mask-image: url(assets/icons/arrow.svg);
+        mask-size: 100%;
+        pointer-events: none;
+        position: static;
+        transition: transform $dropdownIconTransition;
+        width: $dropdownIconSizeSmall;
+        -webkit-mask-image: url(assets/icons/arrow.svg);
+        -webkit-mask-size: 100%;
+      }
+
+      // do not display blinking cursor when dropdown menu active
+      // override in-line styles
+      & > input {
+        display: none !important;
+      }
+    }
+
+    .selectize-input.input-active {
+      cursor: pointer;
+      box-shadow: none;
+
+      &::after {
+        transform: rotate(180deg);
+      }
+    }
+
+    .selectize-dropdown {
+      animation: popUp $dropdownTransition cubic-bezier(.37,1.44,.82,1);
+      box-shadow: $boxShadowSmall;
+      position: absolute;
+      transform-origin: center top;
+      z-index: 9999;
+    }
+  }
+}
+
+@mixin dropdownFilters {
+
+  .selectize-control.single {
+
+    .selectize-input:not(.input-active):hover {
+      border: 1px solid $blue;
+  
+      & > .item {
+        color: $blue;
+      }
+  
+      &::after {
+        background-color: $blue;
+      }
+    }
+  
+    .selectize-input.input-active {
+      border-color: $navy;
+      background-color: $navy;
+  
+      & > .item {
+        color: $white;
+      }
+  
+      &::after {
+        background-color: $white;
+      }
+    }
+  }
+}
+
+@mixin dropdownPanels {
+
+  .selectize-control.single {
+
+    & .selectize-input {
+      @include chart-header;
+      border: none;
+      min-height: 0;
+      transition: background-color $hoverTransition;
+
+      &:hover {
+        background-color: $blue;
+      }
+
+      &::after {
+        background-color: $white;
+        height: $dropdownIconSizeLarge;
+        mask-image: url(assets/icons/dots.svg);
+        width: $dropdownIconSizeLarge;
+        -webkit-mask-image: url(assets/icons/dots.svg);
+      }
+    }
+  
+    .selectize-input.input-active {
+      border-color: $blue;
+      background-color: $blue;
+
+      &::after {
+        transform: scaleX(0);
+      }
+    }
+  }
+}

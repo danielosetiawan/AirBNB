@@ -1,0 +1,59 @@
+// breakpoints
+$breakXs: 380px;
+$breakSm: 576px;
+$breakMd: 768px;
+$breakLg: 1080px;
+$breakXl: 1200px;
+
+// grid
+$maxContentWidth: rem(1600px);
+$infoBoxHeight: rem(100px);
+$gutter: rem(24px);
+
+// fonts
+$fontPrimary: "Maven Pro", sans-serif;
+
+// colors
+$blue: #0099F9;
+$navy: #15354A;
+$ice: #A6D5E0;
+$yellow: #FCD73D;
+$rose: #FF364A;
+$purple: #770F7C;
+$grayDark: #525252;
+$gray: #6E757B;
+$grayLight: #8A8E91;
+$ash: #B3B8BA;
+$ashLight: #e3e7e9;
+$white: #fff;
+
+$colorFinancial: $blue;
+$colorUsers: $yellow;
+$colorOrders: $purple;
+$colorComplaints: $rose;
+$colorFont: $grayDark;
+
+// box shadow
+$boxShadowSmall: 0 2px 8px -2px transparentize($grayDark, 0.6);
+$boxShadowLarge: 0 4px 25px 0 transparentize($grayDark, 0.9);
+
+// rounded corners
+$filletSmall: 6px;
+$filletLarge: 10px;
+
+// spacings
+$spacingSm: rem(8px);
+$spacingMd: rem(20px);
+$spacingLg: rem(32px);
+
+// icons
+$dropdownIconSizeSmall: 10px;
+$dropdownIconSizeLarge: 15px;
+$dashboardLogoWidth: 80px;
+$mainLogoWidth: 180px;
+$infographicIconSize: 30px;
+
+// transitions
+$dropdownIconTransition: 0.2s;
+$dropdownTransition: 0.2s;
+$hoverTransition: 0.2s;
