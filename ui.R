@@ -1,20 +1,27 @@
 # AirBNB RProject
 
-library(shinydashboard)
 library(shiny)
+library(shinydashboard)
+# library(shinyj)
+
+# library(shinyWidgets)
 
 # Load utility functions
-source("utilities/getTimeFilterChoices.R")
-source("utilities/getMetricsChoices.R")
-source("utilities/getExternalLink.R")
+# source("utilities/getTimeFilterChoices.R")
+# source("utilities/getMetricsChoices.R")
+# source("utilities/getExternalLink.R")
 
 
 fluidPage(
-  titlePanel("AirBNB USA", windowTitle = FALSE),
-  sidebarPanel(width = 0),
-    mainPanel(width = 12,
-      tabsetPanel(type = "tabs",
-                  tabPanel("Region",
+
+  
+useShinydashboard(),
+
+  # titlePanel("AirBNB USA", windowTitle = FALSE),
+  # sidebarPanel(width = 0),
+  #   mainPanel(width = 12,
+  #     tabsetPanel(type = "tabs",
+  #                 tabPanel("Region",
 htmlTemplate(
  "www/dashboard.html",
 appTitle = 'AirBNB Data',
@@ -38,48 +45,20 @@ Dropdown3 = selectInput(
   choices = 'All Neighborhoods',
   selectize = TRUE
 ),
+# <div class="panel panel-chart Summary3">{{ Summary3 }}</div>
 
-miniSummary_tl = fluidRow(plotOutput('home')),
-miniSummary_tr = fluidRow(plotOutput('room')),
-miniSummary_bl = fluidRow(plotOutput('shared')),
-miniSummary_br = fluidRow(plotOutput('hotel')),
-Summary1 = fluidRow(plotOutput('facet')),
-Summary2 = breakdown_chart$ui("breakdown_chart"),
-Summary3 = map_chart$ui("map_chart"),
-marketplace_website = consts$marketplace_website)),
+miniSummary_tl = infoBoxOutput('listings', width = '100%'),
+miniSummary_tr = infoBoxOutput('price', width = '100%'),
+miniSummary_bl = infoBoxOutput('hosts', width = '100%'),
+miniSummary_br = infoBoxOutput('rating', width = '100%'),
+  
+Summary1 = plotOutput('neighborhood'),
+Summary2 = plotOutput('facet'))
+# Summary3 = '',
+# marketplace_website = '')
 
-                    tabPanel("Time", verbatimTextOutput("summary")),
-                    tabPanel("Table", DTOutput('table')))
-))
+))))
 
-
-# dashboardPage(
-#   dashboardHeader(title = 'AirBNB Data: USA'),
-#   dashboardSidebar(
-#     sidebarUserPanel('Mr. Hamilton',
-#                      image = './img/hammi.jpeg'),
-#     
-#     sidebarMenu(
-#       menuItem("Intro", tabName = "plots", icon = icon("truck-monster")),
-#       menuItem("EDA", tabName = "data", icon = icon("database")),
-#       menuItem("Analysis", tabName = "plots", icon = icon("truck-monster")),
-#       menuItem("Data", tabName = "plots", icon = icon("truck-monster")),
-#       menuItem("Data", tabName = "data", icon = icon("database")),
-#       menuItem("About Me", tabName = "data", icon = icon("database"))
-#     )
-#   ),
-#   dashboardBody(
-#     tabItems(
-#       tabItem(tabName = 'AirBNB Data',
-#               selectizeInput(inputId = 'state',
-#                              label = 'State',
-#                              choices = c('All', unique(listings_df$state))),
-#               selectizeInput(inputId = 'city',
-#                              label = 'City',
-#                              choices = 'All'),
-#               fluidRow(column(7, plotOutput('count')), 
-#                        column(5, plotOutput('delay')))),
-#       tabItem(tabName = 'data', DTOutput('table'))
-#     )
-#   )
-# )
+#                     tabPanel("Time", verbatimTextOutput("summary")),
+#                     tabPanel("Table", DTOutput('table')))
+# 

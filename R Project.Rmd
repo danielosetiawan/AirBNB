@@ -152,14 +152,14 @@ price.df = raw_listings.df %>%
 ```
 
 ```{r}
-listings.df
+
 ```
 
 
 ```{r}
 # for shiny app
 listings.df %>%
-  select(c(1, 7, 14, 19:27, 29, 36, 39:45, 48:49)) %>%
+  select(c(1, 5, 7, 14, 19:27, 29, 36, 39:45, 48:49)) %>%
   # mutate(across(c(city, state), as.factor)) %>%
   write.fst('./listings.fst')
 
@@ -176,17 +176,39 @@ reviews.df = read.fst('./reviews.fst')
 ```
 
 ```{r}
-raw_listings.df %>%
-  filter(state == 'NY') %>%
-  distinct(neighbourhood_group_cleansed)
+dff2 = raw_listings.df %>%
+  filter(state == 'CA', city == 'los angeles')
+
+dff2
 ```
 
 
 ```{r}
-df2 = listings_df %>%
-  filter(state == 'FL')
+read.fst('./reviews.fst')
+read.fst('./listings.fst')
+```
+```{r}
+df1 = read.fst('./listings.fst') %>%
+  filter(state == 'CA', city == 'los angeles')
 
-length(unique(df2$city))
+read.fst('./listings.fst') %>%
+  group_by(neighbourhood_cleansed, state, city) %>%
+  filter(!neighbourhood_cleansed %in% c('Unincorporated Areas', 
+                                        'Primary Urban Center')) %>%
+  summarise(count = sum(number_of_reviews)) %>%
+  arrange(desc(count)) %>%
+  write_fst('./top_neighborhoods.fst')
+
+
+
+  head(5) %>%
+  ggplot(aes(count, reorder(neighbourhood_cleansed, count))) +
+  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
+  theme_few() +
+  labs(title = 'Top Neighborhoods', 
+           x = 'Review Count', 
+           y = 'Neighborhood')
+  
 ```
 
 

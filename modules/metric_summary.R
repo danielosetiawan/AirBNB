@@ -30,29 +30,29 @@ ui <- function(id) {
   )
 }
 
-init_server <- function(id, monthly_df, yearly_df,
-                          y, m, previous_time_range) {
-  callModule(server, id, monthly_df, yearly_df,
-                          y, m, previous_time_range)
+init_server <- function(id, state_df, city_df,
+                        s, c, n) {
+  callModule(server, id, state_df, city_df,
+                          s, c, n)
 }
 
-server <- function(input, output, session, monthly_df, yearly_df,
-                          y, m, previous_time_range) {
+server <- function(input, output, session, state_df, city_df,
+                          s, c, n) {
 
     metric <- reactive({ consts$metrics_list[[input$summary_metric]] })
     
     output$summary <- renderUI({
       if (m() == 0) {
-        df <- yearly_df
-        prev_timerange_suffix <- "prev_year"
+        df <- state_df
+        # prev_timerange_suffix <- "prev_year"
       } else {
-        df <- monthly_df
-        prev_timerange_suffix <- previous_time_range()
+        df <- city_df
+        # prev_timerange_suffix <- previous_time_range()
       }
 
       selected_date <-
         paste(y(), ifelse(m() == "0", "1", m()), "01", "sep" = "-") %>% as.Date()
-      row <- df[df$date == selected_date, ]
+      row <- df[df$state == state, ]
 
       metric_total_value <- row[, metric()$id]
       

@@ -95,7 +95,7 @@
     @include dropdown;
     @include dropdownPanels;
     position: absolute;
-    width: 100%;
+    width: 1000%;
 
     label {
       @include visuallyHidden;

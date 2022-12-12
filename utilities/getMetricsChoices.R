@@ -16,9 +16,11 @@ createOptionsList <- function(choices, suffix = "") {
 }
 
 getMetricsChoices <- function(available_metrics, metrics_list, suffix = "") {
-  metrics_list[available_metrics] %>% createOptionsList(suffix)
+  metrics_list[available_metrics] %>% 
+    createOptionsList(suffix)
 }
 
 getMetricsChoicesByCategory <- function(category, suffix = "") {
-  Filter(function(x) x$category == category, consts$metrics_list) %>% createOptionsList(suffix)
+  Filter(function(x) x$category == category, consts$metrics_list) %>% 
+    createOptionsList(suffix)
 }
