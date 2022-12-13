@@ -1,0 +1,27 @@
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+*:focus {
+  outline: none;
+}
+
+.dashboard {
+  background-color: $white;
+  box-shadow: $boxShadowLarge;
+  max-width: $maxContentWidth;
+  padding: rem(15px);
+  width: 100%;
+
+  @include mediaFrom($breakSm) {
+    border-radius: $filletLarge;
+    padding: rem(25px);
+  }
+}

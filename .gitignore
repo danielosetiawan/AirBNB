@@ -2,3 +2,7 @@
 .Rproj.user
 .RData
 .RDataTmp
+listings_full.csv
+reviews_full.csv
+reviews.fst
+reviews.fst

@@ -1,0 +1,42 @@
+.chart-time {
+
+  .chart-time-container {
+    padding: rem(70px) rem(10px) rem(10px);
+  }
+
+  .dygraph-label {
+    font-size: rem(10px);
+  }
+
+  .dygraph-legend {
+    // overwrite dygraph inline styles
+    background-color: transparent !important;
+    top: rem(-30px) !important;
+    left: rem(10px) !important;
+    width: 100% !important;
+
+    > span {
+      margin-left: rem(5px);
+      margin-right: rem(10px);
+      display: inline-block;
+    }
+  }
+}
+
+.chart-breakdown {
+
+  .chart-breakdown-container {
+    padding: rem(40px) rem(10px) rem(10px);
+  }  
+}
+
+.chart-map {
+  @include mediaFrom($breakLg) {
+    grid-column: 3 / 5;
+    grid-row: 2 / 4;
+
+    #map-countryMap {
+      height: 100% !important;
+    }
+  }
+}

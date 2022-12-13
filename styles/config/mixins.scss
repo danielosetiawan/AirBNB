@@ -1,0 +1,50 @@
+/* All media-queries should use em values, 
+  as we want a consistent scaling for zoom and increased browser font-size functionalities.
+  Due to Safari bugs rem's cannot be used */
+@mixin mediaFrom($breakpoint) {
+  @if $breakpoint {
+    @media only screen and (min-width: em($breakpoint)) {
+      @content;
+    }
+  }
+}
+
+@mixin gridWidth($widthRatio: "") {
+  // example usage for a component in a 12 column container:
+  // @include gridWidth( 8/12);
+  width: calc(100% * #{$widthRatio} - #{$gutter});
+}
+
+@mixin visuallyHidden {
+  position: absolute;
+  height: 1px;
+  width: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  white-space: nowrap;
+  clip-path: inset(100%);
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+}
+
+@mixin flex-center {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+@mixin chart-header {
+  background-color: $navy;
+  border-radius: $filletSmall $filletSmall 0 0;
+  padding: rem(7px) rem(15px);
+
+  // text in tiles headers
+  & > .item {
+    color: $white;
+    font-size: rem(14px);
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+}

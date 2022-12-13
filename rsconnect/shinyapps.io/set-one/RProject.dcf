@@ -1,0 +1,14 @@
+name: RProject
+title: RProject
+username:
+account: set-one
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7871156
+bundleId: 6625447
+url: https://set-one.shinyapps.io/RProject/
+when: 1670817969.87742
+lastSyncTime: 1670817969.87743
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: constants.R|Cost by State - Boxplot.png|listings_full.csv|modules/.Rhistory|modules/breakdown_chart.R|modules/map_chart.R|modules/metric_summary.R|modules/time_chart.R|R project.R|R Project.Rmd|utilities/getDataByTimeRange.R|utilities/getExternalLink.R|utilities/getMetricsChoices.R|utilities/getPercentChangeSpan.R|utilities/getTimeFilterChoices.R|www/.DS_Store|www/img/daniel.jpeg
