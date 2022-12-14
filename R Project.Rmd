@@ -364,10 +364,11 @@ listings.df %>%
   group_by(city) %>%
   summarise(count = sum(number_of_reviews)) %>%
   arrange(desc(count)) %>%
+  head(10) %>%
   ggplot(aes(count, reorder(city, count))) +
   geom_col(aes(fill = airbnb_red), show.legend = FALSE) + 
   theme_few() +
-  labs(title = 'Foot Traffic due to Travel',
+  labs(title = 'Foot Traffic due to Consumer Travel',
        x = 'Reviews',
        y = 'City') +
   scale_x_continuous(breaks = c(0, 5e5, 1e6), labels = c(0, '500K', '1M'))
@@ -747,7 +748,7 @@ read_fst('./price_reviews_hosts.fst') %>%
   labs(title = 'Foot Traffic throughout the Year',
        x = 'Month',
        y = 'Count')
-  ggsave('./visualizations/Seasonal Cost - Scatterplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Foot Traffic Year - Scatterplot.png', width = 10, height = 6)
 ```
 
 # Accommodation Requests - Barplot
