@@ -367,21 +367,21 @@ listings.df %>%
   ggplot(aes(count, reorder(city, count))) +
   geom_col(aes(fill = airbnb_red), show.legend = FALSE) + 
   theme_few() +
-  labs(title = 'Review Count by City',
-       x = 'Number of Reviews',
+  labs(title = 'Foot Traffic due to Travel',
+       x = 'Reviews',
        y = 'City') +
   scale_x_continuous(breaks = c(0, 5e5, 1e6), labels = c(0, '500K', '1M'))
-  ggsave('./visualizations/Reviews by City - Barplot.png', width = 10, height = 6)
+  ggsave('./visualizations/Travel Foot Traffic - Barplot.png', width = 10, height = 6)
 ```
 
 ```{r}
-amenities.df = listings.df %>%
+listings.df %>%
   mutate(amenities = tolower(gsub('\\]|\\[|"', '', amenities))) %>%
   tidyr::separate_rows(amenities, sep = ', ') %>%
   mutate(amenities = case_when(grepl('coffee', amenities) ~ 'coffee', 
                                grepl('long term', amenities) ~ 'long-term stay',
                                grepl('parking|garage|carport', amenities) ~ 'parking',
-                               grepl('shampoo|condition|essential|soap', amenities) ~ 'toiletries',
+                               grepl('shampoo|condition|essential|soap|shower gel', amenities) ~ 'essentials',
                                grepl('tv|netflix|hulu|streaming|cable|roku|hbo|prime video|dvd', amenities) ~ 'tv / streaming',
                                grepl('washer|dryer|laundry', amenities) ~ 'laundry',
                                grepl('patio|balcony', amenities) ~ 'outdoor space',
@@ -390,7 +390,7 @@ amenities.df = listings.df %>%
                                grepl('ev', amenities) ~ 'ev charging',
                                grepl('gym', amenities) ~ 'gym',
                                grepl('wifi', amenities) ~ 'wifi',
-                               grepl('ac|a/c', amenities) ~ 'a/c',
+                               grepl('ac|a/c|heat', amenities) ~ 'HVAC',
                                grepl('heat', amenities) ~ 'heater',
                                grepl('sound|music|stereo|bluetooth|aux', amenities) ~ 'music',
                                grepl('game|ping pong|billiard', amenities) ~ 'gameroom',
@@ -400,41 +400,43 @@ amenities.df = listings.df %>%
                                grepl('alarm|fire|smoke|extinguisher|first aid', amenities) ~ 'safety',
                                grepl('pillows|blankets|linens', amenities) ~ 'linens',
                                TRUE ~ amenities)) %>%
-  distinct()
+  distinct() %>%
+  write_fst('./amenities.fst')
 ```
 
 ```{r}
+amenities.df = read_fst('./amenities.fst')
+```
+
+
+```{r}
+amenities.df = read_fst('./amenities.fst') %>%
+  filter(!amenities %in% c('safety', 'hangers', 'hot water', 'iron', 'linens', 
+                         'private entrance', 'cleaning products', 'bathtub', 
+                         'coffee', 'security camera', 'wine glasses', 
+                         'dining table', '', 'hot water kettle', 
+                         'laundry', 'long-term stay', 'parking', 'heater', 
+                         'a/c')) %>%
+  group_by(amenities) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+  
 amenities.df
 ```
 
 
 ```{r}
 amenities.df %>%
-  group_by(amenities) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count))
-```
-
-
-```{r}
-amenities.df %>%
-  group_by(amenities) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count)) %>%
-  head(25) %>%
+  filter(amenities %in% c('wifi', 'kitchen', 'HVAC', 'tv / streaming', 'gym', 
+                        'outdoor space', 'ev charging', 'bbq grill', 'outdoor tub')) %>%
   ggplot(aes(count, reorder(amenities, count))) + 
     geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
     theme_few() +
-    labs(title = 'Amenities Offered by Hosts',
+    labs(title = 'Top Amenities Offered by Hosts',
        x = 'Count',
        y = 'Amenities') +
     scale_x_continuous(breaks = c(0, 7.5e4, 1.5e5, 2.25e5), labels = c(0, '75K', '150K', '225K'))
   ggsave('./visualizations/Offered Amenities - Barplot.png', width = 10, height = 6)
-```
-
-```{r}
-listings.df %>%
-  filter(grepl('ishwasher', amenities))
 ```
 
 # is host superhost
@@ -496,19 +498,6 @@ listings.df %>%
 ggsave('./visualizations/Popularity by Property - Barplot.png', width = 10, height = 6)
 ```
 
-```{r}
-df2 = read_fst('./listings.fst') %>%
-  select(id, state, host_total_listings_count) %>%
-  merge(., read_fst('./reviews.fst'), by = 'id') %>%
-  select(id, state, host_total_listings_count, year) %>%
-  distinct()
-```
-
-```{r}
-df2 = df2 %>%
-  select(id, state, host_total_listings_count, year) %>%
-  distinct()
-```
 
 #saturation.fst
 ```{r}
@@ -582,32 +571,10 @@ top10_neighborhoods = listings.df %>%
 ```
 
 
-```{r}
-listings.df %>%
-  filter(neighbourhood_cleansed %in% top10_neighborhoods)
-```
 
 
 
-```{r}
-reviews.df %>%
-  na.omit(date) %>%
-  summarise(min = min(date),
-            max = max(date))
-```
 
-```{r}
-year_ = 2012
-df22 = reviews.df %>%
-  filter(year == year_)
-```
-
-
-```{r}
-read_fst('./reviews.fst') %>%
-  group_by(year, month) %>%
-  
-```
 
 
 ```{r}
@@ -634,7 +601,7 @@ read_fst('./reviews.fst') %>%
   summarise(price = round(mean(price)),
             reviews = n())  %>%
   ggplot(aes(year, reviews)) + 
-  geom_smooth(aes(color = quarter), se = FALSE) +
+  geom_points(aes(color = quarter), se = FALSE) +
   theme_few() +
   scale_y_continuous(breaks = c(5e4, 1e5, 1.5e5, 2e5),
                      labels = c('50K', '100K', '150K', '200K')) +
@@ -665,11 +632,13 @@ listings.df %>%
 
 ```{r}
 
-listings.df %>%
-  mutate(host_since = year(host_since)) %>%
+a = raw_listings.df %>%
+  mutate(across(c(host_since, last_review), 
+                parse_date_time(., c('ymd', 'dmy', 'mdy'))),
+         host_since = year(host_since)) %>%
   distinct(host_since, host_id) %>%
   group_by(host_since) %>%
-  summarise(count = n()) %>%
+  summarise(count = n())
   ggplot(aes(host_since, count)) +
   geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
   theme_few() +
@@ -700,24 +669,6 @@ read_fst('./reviews.fst')
 ```
 
 
-```{r}
-# look at compression nights
-read_fst('./reviews.fst') %>%
-  distinct(id, host_since) %>%
-  mutate(host_since = month(host_since)) %>%
-  group_by(host_since) %>%
-  summarise(count = n()) %>%
-  ggplot(aes(as.character(host_since), count)) + 
-  geom_violin(aes(fill = airbnb_red), show.legend = FALSE) +
-  theme_few() +
-  # scale_x_continuous(breaks = c(1:12)) +
-  # scale_y_continuous(breaks = c(0, 5e3, 10e3, 15e3, 20e3),
-  #                    labels = c(0, '5K', '10K', '15K', '20K')) +
-  labs(title = 'Competition among AirBNB Hosts',
-       x = 'Month',
-       y = 'New Hosts')
-  ggsave('./visualizations/Competition among hosts month - violin.png', width = 10, height = 6)
-```
 
 ```{r}
 reviews.df
@@ -779,17 +730,21 @@ gas.df %>%
   ggsave('./visualizations/Gas Cost per time - Scatterplot.png', width = 10, height = 6)
 ```
 
+```{r}
+read_fst('./price_reviews_hosts.fst')
+```
+
 
 # Seasonal Costs
 ```{r}
-reviews.df %>%
-  ggplot(aes(month)) +
-  geom_bar(aes(fill = airbnb_red), show.legend = FALSE) +
+read_fst('./price_reviews_hosts.fst') %>%
+  ggplot(aes(month, reviews)) +
+  geom_col(aes(fill = airbnb_red), show.legend = FALSE) +
   scale_x_continuous(breaks = c(1:12)) +
   scale_y_continuous(breaks = c(0, 2.5e5, 5e5, 7.5e5, 1e6),
                      labels = c(0, '250K', '500K', '750K', '1M')) +
   theme_few() +
-  labs(title = 'Seasonal Nightly Costs',
+  labs(title = 'Foot Traffic throughout the Year',
        x = 'Month',
        y = 'Count')
   ggsave('./visualizations/Seasonal Cost - Scatterplot.png', width = 10, height = 6)
